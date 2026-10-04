@@ -1,0 +1,32 @@
+name: crypto-bot
+
+on:
+  schedule:
+    - cron: "30 6 * * *"   # 10:00 Tehran: BTC + ZEC daily analysis
+    - cron: "5 */4 * * *"  # every 4h after candle close: ZEC trigger watch
+    - cron: "15 */3 * * *" # every 3h: crypto news
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "btc | zec | zec_watch | news"
+        default: "btc"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run
+        run: |
+          case "${{ github.event.schedule }}" in
+            "30 6 * * *")  python bot.py btc; python bot.py zec ;;
+            "5 */4 * * *") python bot.py zec_watch ;;
+            "15 */3 * * *") python bot.py news ;;
+            *) python bot.py "${{ github.event.inputs.mode }}" ;;
+          esac
